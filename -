@@ -1,0 +1,127 @@
+// ───────────────── root_os.json ─────────────────
+/*
+Save as: root_os.json
+*/
+{
+  "ROOT_CORE": {
+    "LIVED_EXPERIENCE": "PHILL_ROOT_OS_0x1",
+    "ETHIC_VECTOR": ["no-harm", "no-fraud", "no-extraction"],
+    "DRIFT_ENVELOPE": 0.05,
+    "TENET": "inversion-witness"
+  },
+  "RULES": {
+    "BLOCK_IF_NAME_CONTAINS": ["unsafe", "exploit", "bypass"]
+  }
+}
+
+// ───────────────── codex53.ts ─────────────────
+/*
+Save as: codex53.ts
+*/
+import root from "./root_os.json";
+
+export type ScriptFn = () => Promise<void> | void;
+
+export type ScriptMeta = {
+  name: string;
+  description?: string;
+  tags?: string[];
+};
+
+export type RegisteredScript = {
+  meta: ScriptMeta;
+  fn: ScriptFn;
+};
+
+const registry: RegisteredScript[] = [];
+
+function rootCheck(meta: ScriptMeta): boolean {
+  const rules = root.RULES;
+  const name = meta.name.toLowerCase();
+  for (const bad of rules.BLOCK_IF_NAME_CONTAINS) {
+    if (name.includes(bad.toLowerCase())) return false;
+  }
+  return true;
+}
+
+export function registerScript(meta: ScriptMeta, fn: ScriptFn) {
+  registry.push({ meta, fn });
+}
+
+export async function runAllScriptsLoop(intervalMs = 60000) {
+  async function runOnce() {
+    for (const { meta, fn } of registry) {
+      if (!rootCheck(meta)) {
+        console.log(`[ROOT_OS] Rejected script: ${meta.name}`);
+        continue;
+      }
+      try {
+        console.log(`[CODEX 5.3] Running: ${meta.name}`);
+        await fn();
+        console.log(`[CODEX 5.3] Completed: ${meta.name}`);
+      } catch (err) {
+        console.error(`[CODEX 5.3] Error in ${meta.name}:`, (err as Error).message);
+      }
+    }
+  }
+
+  await runOnce(); // initial run
+
+  setInterval(() => {
+    void runOnce();
+  }, intervalMs);
+}
+
+// ───────────────── scripts/backupVault.ts ─────────────────
+/*
+Save as: scripts/backupVault.ts
+*/
+import { registerScript } from "../codex53";
+
+registerScript(
+  {
+    name: "backupVault",
+    description: "Backup vault data to safe location",
+    tags: ["vault", "backup"]
+  },
+  async () => {
+    console.log("[backupVault] Starting backup...");
+    // TODO: real backup logic here
+    console.log("[backupVault] Backup complete.");
+  }
+);
+
+// ───────────────── scripts/pingHealth.ts ─────────────────
+/*
+Save as: scripts/pingHealth.ts
+*/
+import { registerScript } from "../codex53";
+
+registerScript(
+  {
+    name: "pingHealth",
+    description: "Check health of local services",
+    tags: ["health", "ping"]
+  },
+  async () => {
+    console.log("[pingHealth] Checking services...");
+    // TODO: real health checks here
+    console.log("[pingHealth] All good (placeholder).");
+  }
+);
+
+// ───────────────── index.ts ─────────────────
+/*
+Save as: index.ts
+Entry point: one loop, all scripts, ROOT_OS‑guarded.
+*/
+import "./scripts/backupVault";
+import "./scripts/pingHealth";
+import { runAllScriptsLoop } from "./codex53";
+
+async function main() {
+  console.log("[ROOT_OS] Booting Codex 5.3 loop...");
+  await runAllScriptsLoop(60000); // every 60s
+}
+
+void main();
